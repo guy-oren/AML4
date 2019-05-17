@@ -79,23 +79,18 @@ def calc_stats(img2annots, vocab_size):
         for annot in annots_list:
             vocab_count[annot] += 1
 
-    # annots2vocab = {}
-    # for i, (annot, count) in enumerate(sorted(vocab_count.items(), key=operator.itemgetter(1)), 1):
-    #     if count >= vocab_th:
-    #         annots2vocab[annot] = (annot, i)
-    #     else:
-    #         annots2vocab[annot] = ("unk", 0)
-
     singelton_counts = dict(vocab_count.most_common(vocab_size))
     id2annot = dict(zip(range(len(singelton_counts)), singelton_counts.keys()))
 
+    vocab = singelton_counts.keys()
     pairs_counts = defaultdict(lambda: 0)
     for annots_list in img2annots.values():
         for i in range(len(annots_list) - 1):
             for j in range(i+1, len(annots_list)):
                 annot_name_1 = annots_list[i]
                 annot_name_2 = annots_list[j]
-                pairs_counts[frozenset([annot_name_1, annot_name_2])] += 1
+                if annot_name_1 in vocab and annot_name_2 in vocab:
+                    pairs_counts[frozenset([annot_name_1, annot_name_2])] += 1
 
     return singelton_counts, pairs_counts, id2annot
 
@@ -106,24 +101,25 @@ def build_graph(singelton_counts, pairs_counts, id2annot, total_size):
     for i in range(len(id2annot) - 1):
         for j in range(i + 1, len(id2annot)):
             pair_set = frozenset([id2annot[i], id2annot[j]])
-            i_1 = singelton_counts[id2annot[i]] / total_size
-            i_0 = 1 - i_1
-            j_1 = singelton_counts[id2annot[j]] / total_size
-            j_0 = 1 - j_1
-            slack = 1e-10  # to avoid division by zero
+            # NOTE: the following probabilities are not divided by total_size in order to avoid numerical underflow
+            # and it does not change the relations between weights of edges
+            i_1 = singelton_counts[id2annot[i]]
+            i_0 = total_size - i_1
+            j_1 = singelton_counts[id2annot[j]]
+            j_0 = total_size - j_1
             mutual_0_0 = (total_size - singelton_counts[id2annot[i]] - singelton_counts[id2annot[j]] +
-                          pairs_counts[pair_set]) / total_size
+                          pairs_counts[pair_set])
             if mutual_0_0 > 0:
-                mutual_0_0 = mutual_0_0 * np.log(mutual_0_0 / (i_0 * j_0 + slack))
-            mutual_0_1 = (singelton_counts[id2annot[j]] - pairs_counts[pair_set]) / total_size
+                mutual_0_0 = mutual_0_0 * np.log(mutual_0_0 / (i_0 * j_0))
+            mutual_0_1 = (singelton_counts[id2annot[j]] - pairs_counts[pair_set])
             if mutual_0_1 > 0:
-                mutual_0_1 = mutual_0_1 * np.log(mutual_0_1 / (i_0 * j_1 + slack))
-            mutual_1_0 = (singelton_counts[id2annot[i]] - pairs_counts[pair_set]) / total_size
+                mutual_0_1 = mutual_0_1 * np.log(mutual_0_1 / (i_0 * j_1))
+            mutual_1_0 = (singelton_counts[id2annot[i]] - pairs_counts[pair_set])
             if mutual_1_0 > 0:
-                mutual_1_0 = mutual_1_0 * np.log(mutual_1_0 / (i_1 * j_0 + slack))
-            mutual_1_1 = pairs_counts[pair_set] / total_size
+                mutual_1_0 = mutual_1_0 * np.log(mutual_1_0 / (i_1 * j_0))
+            mutual_1_1 = pairs_counts[pair_set]
             if mutual_1_1 > 0:
-                mutual_1_1 = mutual_1_1 * np.log(mutual_1_1 / (i_1 * j_1 + slack))
+                mutual_1_1 = mutual_1_1 * np.log(mutual_1_1 / (i_1 * j_1))
             # using negative weights to get maximum spanning tree
             graph[i, j] = - (mutual_0_0 + mutual_0_1 + mutual_1_0 + mutual_1_1)
 
@@ -138,21 +134,3 @@ def build_chow_liu_tree(graph, id2annot):
         chow_liu_tree[id2annot[i]] = childern
 
     return chow_liu_tree
-
-
-
-# def calc_counts(img2annots, annots2vocab):
-#     singelton_counts = defaultdict(lambda: 0)
-#     pairs_counts = defaultdict(lambda: {})
-#     for annots_list in img2annots.values():
-#         for annot in annots_list:
-#             singelton_counts[annots2vocab[annot][0]] += 1
-#
-#         for i in range(len(annots_list) - 1):
-#             for j in range(i+1, len(annots_list)):
-#                 annot_name_1 = annots2vocab[annots_list[i]][0]
-#                 annot_name_2 = annots2vocab[annots_list[j]][0]
-#                 pairs_counts[frozenset([annot_name_1, annot_name_2])] += 1
-#
-#     return singelton_counts, pairs_counts
-

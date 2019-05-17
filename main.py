@@ -10,7 +10,7 @@ pd.set_option('precision', 2)
 
 
 def main():
-    vocab_size = 400
+    vocab_size = 19995
     oid_data = 'data/annotations-machine.csv'
     classes_fn = 'data/class-descriptions.csv'
 
