@@ -4,13 +4,20 @@ import util
 import vis
 import os
 import pickle
+import argparse
 
 np.set_printoptions(precision=4)
 pd.set_option('precision', 2)
 
 
 def main():
-    vocab_size = 19995
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--vocab_size", type=int, help="Maximum number of annotations to process, default is 400",
+                        default=400)
+
+    args = parser.parse_args()
+
+    vocab_size = args.vocab_size
     oid_data = 'data/annotations-machine.csv'
     classes_fn = 'data/class-descriptions.csv'
 
