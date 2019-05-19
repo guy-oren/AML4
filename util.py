@@ -135,8 +135,11 @@ def build_graph(singelton_counts, pairs_counts, id2annot, total_size):
 def build_chow_liu_tree(graph, id2annot):
     tree = minimum_spanning_tree(graph)
     chow_liu_tree = dict()
+    total_edges = 0
     for i, row in enumerate(tree):
         childern = [id2annot[x] for x in np.nonzero(np.squeeze(row.toarray()))[0]]
-        chow_liu_tree[id2annot[i]] = childern
+        if len(childern) > 0:
+            chow_liu_tree[id2annot[i]] = childern
+            total_edges += len(childern)
 
     return chow_liu_tree

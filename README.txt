@@ -14,6 +14,8 @@ Requirements:
 
 Run:
     - python main.py --vocab_size <number>
-    - NOTE: the argument vocab_size is optional, the default size is 400
-    - NOTE: The data folder contains additional pickle file which is the result of processing label annotations for images.
-      If the file does not exists, the code will create it
+    - NOTE: The argument vocab_size is optional, the default size is 400
+    - NOTE: The data folder contains additional pickle file which is the result of processing label annotations for
+      images. If the file does not exists, the code will create it
+    - NOTE: Apparently there exist different machine codes with the same display name. To handle this we chose to number
+      the duplications and still treat each machine code as different annotation
