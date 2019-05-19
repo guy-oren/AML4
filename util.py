@@ -74,15 +74,21 @@ def plot_px_vs_entropy(singles, num_images):
 
 
 def calc_stats(img2annots, vocab_size):
+    """
+    Count the times each annotation and annotation pair exist in the data
+    """
     vocab_count = Counter()
     for annots_list in img2annots.values():
         for annot in annots_list:
             vocab_count[annot] += 1
 
+    # holds counts per annotation
     singelton_counts = dict(vocab_count.most_common(vocab_size))
+    # maps between node numeric id to annotation
     id2annot = dict(zip(range(len(singelton_counts)), singelton_counts.keys()))
 
     vocab = singelton_counts.keys()
+    # holds counts for pairs of annotations
     pairs_counts = defaultdict(lambda: 0)
     for annots_list in img2annots.values():
         for i in range(len(annots_list) - 1):
